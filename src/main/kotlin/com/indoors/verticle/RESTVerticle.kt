@@ -6,6 +6,7 @@ package com.indoors.verticle
 import com.indoors.*
 import com.indoors.common.Result
 import com.indoors.common.computePosition
+import com.qiniu.util.Auth
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.json.JsonObject
 import io.vertx.core.logging.LoggerFactory
@@ -45,9 +46,19 @@ class RESTVerticle : AbstractVerticle() {
     router.post("/room/new").handler { createNewRoom(it) }
     router.post("/room/delete").handler { deleteRoom(it) }
     router.post("/room/positions/clear").handler { clearRoomPosition(it) }
+    router.get("/upload/token").handler { createUploadToken(it) }
 
     // create server
     vertx.createHttpServer().requestHandler({ router.accept(it) }).listen(8080)
+  }
+
+  private fun createUploadToken(routingContext: RoutingContext) {
+    val response = routingContext.response()
+    val auth = Auth.create(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+
+    response.successWith(data = json {
+      obj("token" to auth.uploadToken(QINIU_BUCKET))
+    })
   }
 
   private fun clearRoomPosition(routingContext: RoutingContext) {
@@ -115,10 +126,30 @@ class RESTVerticle : AbstractVerticle() {
 
   // TODO 关于同名
   private fun createNewRoom(routingContext: RoutingContext) {
-    val request = routingContext.request()
     val response = routingContext.response()
 
-    val name = request.getParam("name")
+    val bodyAsJson = routingContext.bodyAsJson;
+
+    val name = bodyAsJson.getString("name")
+    val roomWidth = bodyAsJson.getDouble("width", -1.0)
+    val roomHeight = bodyAsJson.getDouble("height", -1.0)
+    val roomUrl = bodyAsJson.getString("image_url")
+
+    if(roomWidth == null || roomHeight == null){
+      response.failWith("room's width or height must e a number")
+      return
+    }
+
+    if(roomWidth <= 0 || roomHeight <= 0){
+      response.failWith("room's width or height must be greater than 0")
+      return
+    }
+
+    if (roomUrl.isNullOrEmpty()) {
+      response.failWith("need param image_url")
+      return
+    }
+
     if (name.isNullOrEmpty()) {
       response.failWith("need param name")
       return
@@ -127,7 +158,10 @@ class RESTVerticle : AbstractVerticle() {
     vertxCoroutine {
       val result = resultWith<String> { handler ->
         val document = json {
-          obj("room_name" to name)
+          obj("room_name" to name,
+              "width" to roomWidth,
+              "height" to roomHeight,
+              "image_url" to roomUrl)
         }
         mongoClient.insert("room", document, handler)
       }
