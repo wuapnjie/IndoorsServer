@@ -10,6 +10,7 @@ import io.vertx.core.http.HttpHeaders
 const val QINIU_ACCESS_KEY = "VVt4kvQGnCzEefCCRPTMDn0ZeXf58fQpLI3rpXrV"
 const val QINIU_SECRET_KEY = "tV_E2l1314xCdWzYhJOAzD9Qm9wllfgEzqRB9cIY"
 const val QINIU_BUCKET = "indoors"
+const val QQINIU_URL_PREFIX = "http://p5vucf7pw.bkt.clouddn.com/"
 
 // com.indoors.common key
 const val KEY_STATUS = "status"

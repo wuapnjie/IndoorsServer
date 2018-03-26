@@ -100,7 +100,6 @@ class RESTVerticle : AbstractVerticle() {
     }
   }
 
-  
 
   private fun deleteRoom(routingContext: RoutingContext) {
     val request = routingContext.request()
@@ -130,17 +129,17 @@ class RESTVerticle : AbstractVerticle() {
 
     val bodyAsJson = routingContext.bodyAsJson;
 
-    val name = bodyAsJson.getString("name")
+    val name = bodyAsJson.getString("room_name")
     val roomWidth = bodyAsJson.getDouble("width", -1.0)
     val roomHeight = bodyAsJson.getDouble("height", -1.0)
     val roomUrl = bodyAsJson.getString("image_url")
 
-    if(roomWidth == null || roomHeight == null){
+    if (roomWidth == null || roomHeight == null) {
       response.failWith("room's width or height must e a number")
       return
     }
 
-    if(roomWidth <= 0 || roomHeight <= 0){
+    if (roomWidth <= 0 || roomHeight <= 0) {
       response.failWith("room's width or height must be greater than 0")
       return
     }
@@ -161,14 +160,21 @@ class RESTVerticle : AbstractVerticle() {
           obj("room_name" to name,
               "width" to roomWidth,
               "height" to roomHeight,
-              "image_url" to roomUrl)
+              "image_url" to QQINIU_URL_PREFIX + roomUrl)
         }
         mongoClient.insert("room", document, handler)
       }
 
       result.fold(success = { id ->
+        val room = json {
+          obj("_id" to id,
+              "room_name" to name,
+              "width" to roomWidth,
+              "height" to roomHeight,
+              "image_url" to QQINIU_URL_PREFIX + roomUrl)
+        }
         val data = json {
-          obj("room_id" to id)
+          obj("room" to room)
         }
         response.successWith(data = data)
       }, failure = { response.failWith(it) })
@@ -216,13 +222,13 @@ class RESTVerticle : AbstractVerticle() {
         })
   }
 
-  private suspend fun findRoom(roomId: String) = async {
+  private suspend fun findRoom(roomId: String, fields : JsonObject? = null) = async {
     val query = json {
       obj("_id" to roomId)
     }
 
     val result = resultWith<JsonObject> { handler ->
-      mongoClient.findOne("room", query, null, handler)
+      mongoClient.findOne("room", query, fields, handler)
     }
 
     return@async result
@@ -240,7 +246,11 @@ class RESTVerticle : AbstractVerticle() {
 
     vertxCoroutine {
 
-      findRoom(roomId).await()
+      findRoom(roomId, json {
+        obj(
+          "positions.wifi_stats" to 0
+        )
+      }).await()
           .fold(success = { room ->
             val data = json {
               obj("room" to room)
