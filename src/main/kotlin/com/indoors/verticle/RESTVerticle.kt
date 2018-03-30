@@ -362,7 +362,9 @@ class RESTVerticle : AbstractVerticle() {
         // avoid query all data
         if (limit <= 0) limit = 10
 
-        val options = FindOptions(limit = limit, skip = offset)
+        val options = FindOptions(limit = limit, skip = offset, fields = json {
+          obj("positions" to 0)
+        })
         mongoClient.findWithOptions("room", JsonObject(), options, handler)
       }
 
