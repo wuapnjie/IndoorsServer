@@ -363,7 +363,7 @@ class RESTVerticle : AbstractVerticle() {
         if (limit <= 0) limit = 10
 
         val options = FindOptions(limit = limit, skip = offset, fields = json {
-          obj("positions" to 0)
+          obj("positions.wifi_stats" to 0)
         })
         mongoClient.findWithOptions("room", JsonObject(), options, handler)
       }
