@@ -16,6 +16,7 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.kotlin.core.json.JsonArray
+import io.vertx.kotlin.core.json.array
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.dispatcher
@@ -160,7 +161,8 @@ class RESTVerticle : AbstractVerticle() {
           obj("room_name" to name,
               "width" to roomWidth,
               "height" to roomHeight,
-              "image_url" to QQINIU_URL_PREFIX + roomUrl)
+              "image_url" to QQINIU_URL_PREFIX + roomUrl,
+              "positions" to array())
         }
         mongoClient.insert("room", document, handler)
       }
@@ -213,16 +215,22 @@ class RESTVerticle : AbstractVerticle() {
     findRoom(roomId).await()
         .fold(success = { roomInfo ->
 
-          val needCompute = deserialize<RoomPosition>(routingContext.bodyAsString)
-          val room = deserialize<Room>(roomInfo.toString())
+          return try {
+            val needCompute = deserialize<NeedComputePosition>(routingContext.bodyAsString)
+            val room = deserialize<Room>(roomInfo.toString())
 
-          return Result.of { room.computePosition(needCompute.wifi_stats) }
+            Result.of { room.computePosition(needCompute.fingerprint) }
+          } catch (e: Exception) {
+            logger.error(e)
+            Result.error(e)
+          }
+
         }, failure = { error ->
           return Result.error(error)
         })
   }
 
-  private suspend fun findRoom(roomId: String, fields : JsonObject? = null) = async {
+  private suspend fun findRoom(roomId: String, fields: JsonObject? = null) = async {
     val query = json {
       obj("_id" to roomId)
     }
@@ -248,7 +256,7 @@ class RESTVerticle : AbstractVerticle() {
 
       findRoom(roomId, json {
         obj(
-          "positions.wifi_stats" to 0
+            "positions.wifi_stats" to 0
         )
       }).await()
           .fold(success = { room ->
@@ -285,7 +293,7 @@ class RESTVerticle : AbstractVerticle() {
   private suspend fun updateOrPushPositions(roomId: String, roomPosition: JsonObject):
       Boolean = suspendCoroutine { cont ->
     launch(vertx.dispatcher()) {
-      val wifi_stats = roomPosition.getJsonArray("wifi_stats")
+      val wifi_stat = roomPosition.getJsonArray("wifi_stats")
 
       val x = roomPosition.getDouble("x", 0.0)
       val y = roomPosition.getDouble("y", 0.0)
@@ -306,8 +314,11 @@ class RESTVerticle : AbstractVerticle() {
 
       val updateSet = json {
         obj(
-            "\$set" to obj(
-                "positions.$.wifi_stats" to wifi_stats
+            "\$push" to obj(
+                "positions.$.wifi_stats" to obj(
+                    "wifi_stat" to wifi_stat,
+                    "upload_time" to System.currentTimeMillis()
+                )
             )
         )
       }
@@ -332,7 +343,14 @@ class RESTVerticle : AbstractVerticle() {
             val updatePush = json {
               obj(
                   "\$push" to obj(
-                      "positions" to roomPosition
+                      "positions" to obj(
+                          "x" to x,
+                          "y" to y,
+                          "wifi_stats" to array(obj(
+                              "wifi_stat" to wifi_stat,
+                              "upload_time" to System.currentTimeMillis()
+                          ))
+                      )
                   )
               )
             }
@@ -363,12 +381,21 @@ class RESTVerticle : AbstractVerticle() {
         if (limit <= 0) limit = 10
 
         val options = FindOptions(limit = limit, skip = offset, fields = json {
-          obj("positions.wifi_stats" to 0)
+          obj("positions.wifi_stats" to 0,
+              "positions.x" to 0,
+              "positions.y" to 0)
         })
         mongoClient.findWithOptions("room", JsonObject(), options, handler)
       }
 
       result.fold(success = { list ->
+
+        val roomInfos = arrayListOf<JsonObject>()
+        list.forEach { item ->
+          val positions = item.getJsonArray("positions")
+          item.remove("positions")
+          item.put("positions_count", positions?.size() ?: 0)
+        }
 
         val data = json {
           obj("rooms" to list)
