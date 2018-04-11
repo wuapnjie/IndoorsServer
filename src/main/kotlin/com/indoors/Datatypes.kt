@@ -21,15 +21,29 @@ data class NeedComputePosition(
 
 data class RoomPosition(val x: Double, val y: Double, val wifi_stats: List<WiFiFingerprint>) {
 
-//  val macRSSIMap : HashMap<String, Int>
-//    get() {
-//      val map = hashMapOf<String, Int>()
-//      wifi_stats.forEach {
-//        map.put(it.BSSID, it.RSSI)
-//      }
-//
-//      return map
-//    }
+  val macRSSIMap : HashMap<String, Int>
+    get() {
+      val map = hashMapOf<String, ArrayList<Int>>()
+      wifi_stats.forEach { fingerprint ->
+
+        fingerprint.fingerprint.forEach {wifiInfo ->
+          val list = map[wifiInfo.BSSID]
+          if (list == null){
+            map[wifiInfo.BSSID] = arrayListOf(wifiInfo.RSSI)
+          }else{
+            list += wifiInfo.RSSI
+          }
+        }
+
+      }
+
+      val result = hashMapOf<String, Int>()
+      map.forEach { mac, rssiList ->
+        result[mac] = rssiList.sum() / rssiList.size
+      }
+
+      return result
+    }
 }
 
 data class Position(val x: Double, val y: Double)
