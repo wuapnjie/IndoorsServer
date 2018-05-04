@@ -218,8 +218,9 @@ class RESTVerticle : AbstractVerticle() {
           return try {
             val needCompute = deserialize<NeedComputePosition>(routingContext.bodyAsString)
             val room = deserialize<Room>(roomInfo.toString())
+            val k = routingContext.request().getParam("k").toIntOrNull() ?: 4
 
-            Result.of { room.computePosition(needCompute.fingerprint) }
+            Result.of { room.computePosition(needCompute.fingerprint, k) }
           } catch (e: Exception) {
             logger.error(e)
             Result.error(e)
