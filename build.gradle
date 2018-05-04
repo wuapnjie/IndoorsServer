@@ -42,7 +42,7 @@ dependencies {
   compile "io.vertx:vertx-mongo-client:$vertxVersion"
 
   compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-  compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+  compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
   compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
 
   compile "ch.qos.logback:logback-classic:$log_back_version"
