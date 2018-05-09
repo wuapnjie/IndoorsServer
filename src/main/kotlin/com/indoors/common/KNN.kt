@@ -65,9 +65,8 @@ infix fun List<WiFiInfo>.to(other: RoomPosition): Double {
   val sum = this
       .asSequence()
       .map { wifiNetwork ->
-        val otherRSSI = otherRSSIMap[wifiNetwork.BSSID]
-        if (otherRSSI != null) (wifiNetwork.RSSI - otherRSSI) * (wifiNetwork.RSSI - otherRSSI)
-        else 0
+        val otherRSSI = otherRSSIMap[wifiNetwork.BSSID] ?: -100
+        return@map (wifiNetwork.RSSI - otherRSSI) * (wifiNetwork.RSSI - otherRSSI)
       }
       .sum()
       .toDouble()
