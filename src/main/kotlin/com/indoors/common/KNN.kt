@@ -15,12 +15,13 @@ import kotlin.math.sqrt
 private val logger = LoggerFactory.getLogger("KNN")
 
 fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
-  logger.info("开始计算")
+  logger.info("START COMPUTE")
 
   val positionsWithDistance = arrayListOf<Pair<RoomPosition, Double>>()
   // 计算所有的距离
   this.positions.forEach {
     val distance = wifiList to it
+    logger.info("distance = $distance")
     positionsWithDistance += it to distance
   }
 
