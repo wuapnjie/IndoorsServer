@@ -44,7 +44,7 @@ fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
   for (i in 0 until k) {
     w += (1 / positionsWithDistance[i].second) / d
   }
-  logger.info("w = $w")
+//  logger.info("w = $w")
 
   // 计算出加权位置
   var x = 0.0
