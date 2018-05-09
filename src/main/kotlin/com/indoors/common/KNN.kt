@@ -21,8 +21,10 @@ fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
   // 计算所有的距离
   this.positions.forEach {
     val distance = wifiList to it
-    logger.info("distance = $distance")
-    positionsWithDistance += it to distance
+    if (distance != 0.0){
+      positionsWithDistance += it to distance
+    }
+//    logger.info("distance = $distance")
   }
 
   // 对距离进行排序
