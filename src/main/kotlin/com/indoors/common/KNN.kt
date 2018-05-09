@@ -4,6 +4,7 @@ import com.indoors.Position
 import com.indoors.Room
 import com.indoors.RoomPosition
 import com.indoors.WiFiInfo
+import io.vertx.core.logging.LoggerFactory
 import java.util.*
 import kotlin.math.sqrt
 
@@ -11,7 +12,10 @@ import kotlin.math.sqrt
  * @author wupanjie on 2017/12/9.
  */
 
+private val logger = LoggerFactory.getLogger("KNN")
+
 fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
+  logger.info("开始计算")
 
   val positionsWithDistance = arrayListOf<Pair<RoomPosition, Double>>()
   // 计算所有的距离
@@ -26,15 +30,18 @@ fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
   })
 
   val k = if (K < positionsWithDistance.size) K else positionsWithDistance.size
+  logger.info("k = $k")
 
   // 前k个1/distance的和
   val d = (0 until k).sumByDouble { 1 / positionsWithDistance[it].second }
+  logger.info("d = $d")
 
   // 选出前k个邻近向量计算权值w
   val w = arrayListOf<Double>()
   for (i in 0 until k) {
     w += (1 / positionsWithDistance[i].second) / d
   }
+  logger.info("w = $w")
 
   // 计算出加权位置
   var x = 0.0
