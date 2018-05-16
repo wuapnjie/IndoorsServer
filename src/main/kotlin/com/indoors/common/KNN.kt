@@ -15,6 +15,7 @@ import kotlin.math.sqrt
 private val logger = LoggerFactory.getLogger("KNN")
 
 fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
+  val start = System.currentTimeMillis()
   logger.info("START COMPUTE")
 
   val positionsWithDistance = arrayListOf<Pair<RoomPosition, Double>>()
@@ -55,6 +56,7 @@ fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
     y += w[i] * positionsWithDistance[i].first.y
   }
 
+  logger.info("WKK use ${System.currentTimeMillis() - start} ms")
   return Position(x, y)
 }
 
