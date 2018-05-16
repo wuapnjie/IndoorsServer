@@ -43,7 +43,7 @@ fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
   // 选出前k个邻近向量计算权值w
   val w = arrayListOf<Double>()
   for (i in 0 until k) {
-    w += (1 / positionsWithDistance[i].second) / d
+    w += (1.0 / positionsWithDistance[i].second) / d
   }
 //  logger.info("w = $w")
 
@@ -51,12 +51,14 @@ fun Room.computePosition(wifiList: List<WiFiInfo>, K: Int = 4): Position {
   var x = 0.0
   var y = 0.0
 
+  val ww = 1.0 / k
+
   for (i in 0 until k) {
-    x += w[i] * positionsWithDistance[i].first.x
-    y += w[i] * positionsWithDistance[i].first.y
+    x += ww * positionsWithDistance[i].first.x
+    y += ww * positionsWithDistance[i].first.y
   }
 
-  logger.info("WKK use ${System.currentTimeMillis() - start} ms")
+  logger.info("Compute use ${System.currentTimeMillis() - start} ms")
   return Position(x, y)
 }
 
@@ -67,7 +69,7 @@ infix fun List<WiFiInfo>.to(other: RoomPosition): Double {
   val sum = this
       .asSequence()
       .map { wifiNetwork ->
-        val otherRSSI = otherRSSIMap[wifiNetwork.BSSID] ?: -100
+        val otherRSSI = otherRSSIMap[wifiNetwork.BSSID] ?: 0
         return@map (wifiNetwork.RSSI - otherRSSI) * (wifiNetwork.RSSI - otherRSSI)
       }
       .sum()
